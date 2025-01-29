@@ -1,37 +1,8 @@
-{ stdenv
-, lib
-, makeWrapper
-, bzip2_1_1
-, fetchurl
-, python3
-, perl
-, xxd
-, libxml2
-, coreutils
-, gnugrep
-, gnused
-, gnutar
-, gawk
-, which
-, gzip
-, cpio
-, bintools-unwrapped
-, findutils
-, util-linux
-, dosfstools
-, lz4
-, gcc
-, dtc
-, qemu
-, runtimeShell
-, fetchzip
-, bc
-, openssl
-, bspSrc
-, l4tVersion
-, symlinkJoin
+{ stdenv, lib, makeWrapper, bzip2_1_1, fetchurl, python3, perl, xxd, libxml2
+, coreutils, gnugrep, gnused, gnutar, gawk, which, gzip, cpio
+, bintools-unwrapped, findutils, util-linux, dosfstools, lz4, gcc, dtc, qemu
+, runtimeShell, fetchzip, bc, openssl, mktemp, bspSrc, l4tVersion, symlinkJoin,
 }:
-
 let
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
@@ -40,10 +11,7 @@ let
     src = bspSrc;
 
     nativeBuildInputs = [ makeWrapper ];
-    buildInputs = [
-      (python3.withPackages (p: with p; [ pyyaml ]))
-      perl
-    ];
+    buildInputs = [ (python3.withPackages (p: with p; [ pyyaml ])) perl ];
 
     patches = [ ./flash-tools.patch ];
 
@@ -123,6 +91,7 @@ let
       dosfstools
       bc
       openssl
+      mktemp
 
       # Needed by bootloader/tegraflash_impl_t234.py
       gcc
@@ -139,6 +108,4 @@ let
       })
     ];
   };
-
-in
-flash-tools
+in flash-tools
