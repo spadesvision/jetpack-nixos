@@ -197,7 +197,7 @@ in
               # overlay-with-config needs to reference `prev.nvidia-jetpack`, so we can't wait for it to resolve via `final`.
             {
               nvidia-jetpack = final."nvidia-jetpack${cfg.majorVersion}";
-              cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${cfg.majorVersion}".cudaMajorMinorVersion}";
+              # cudaPackages = final."cudaPackages_${lib.versions.major final."nvidia-jetpack${cfg.majorVersion}".cudaMajorMinorVersion}";
             }
             # warn if anyone tries to evaluate non-default nvidia-jetpack package sets, but keep them around to avoid missing attribute errors.
             // builtins.listToAttrs (builtins.map

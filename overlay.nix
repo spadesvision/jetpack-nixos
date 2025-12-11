@@ -7,13 +7,17 @@ let
 
   # Since Jetson capabilities are never built by default, we can check if any of them were requested
   # through final.config.cudaCapabilities and use that to determine if we should change some manifest versions.
-  useJetPackCudaPackageSet = final.stdenv.hostPlatform.system == "aarch64-linux" && (
-    let
-      isXavier = computeCapability: computeCapability == "7.2";
-      isOrin = computeCapability: computeCapability == "8.7";
-    in
-    any (computeCapability: isXavier computeCapability || isOrin computeCapability) (final.config.cudaCapabilities or [ ])
-  );
+  useJetPackCudaPackageSet =
+    final.stdenv.hostPlatform.system == "aarch64-linux"
+    && (
+      let
+        isXavier = computeCapability: computeCapability == "7.2";
+        isOrin = computeCapability: computeCapability == "8.7";
+      in
+      any (computeCapability: isXavier computeCapability || isOrin computeCapability) (
+        final.config.cudaCapabilities or [ ]
+      )
+    );
 in
 {
   nvidia-jetpack5 = import ./mk-overlay.nix
@@ -112,60 +116,61 @@ in
   # Set cudaPackage package sets to our JetPack-constructed package sets if we are targeting Jetson capabilities.
   # NOTE: We cannot lift the conditionals out further without causing infinite recursion, as the fixed-point would be
   # used to determine the presence/absence of attributes.
-  cudaPackages_11_4 =
-    if useJetPackCudaPackageSet then
-      assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
-      final.nvidia-jetpack5.cudaPackages
-    else
-      prev.cudaPackages_11_4;
-  cudaPackages_11 =
-    if useJetPackCudaPackageSet then
-      final.cudaPackages_11_4
-    else
-      prev.cudaPackages_11;
+  # cudaPackages_11_4 =
+  #   if useJetPackCudaPackageSet then
+  #     assert final.nvidia-jetpack5.cudaPackages.cudaMajorMinorVersion == "11.4";
+  #     final.nvidia-jetpack5.cudaPackages
+  #   else
+  #     prev.cudaPackages_11_4;
+  # cudaPackages_11 =
+  #   if useJetPackCudaPackageSet then
+  #     final.cudaPackages_11_4
+  #   else
+  #     prev.cudaPackages_11;
 
-  cudaPackages_12_6 =
-    if useJetPackCudaPackageSet then
-      assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
-      final.nvidia-jetpack6.cudaPackages
-    else
-      prev.cudaPackages_12_6;
-  cudaPackages_12 =
-    if useJetPackCudaPackageSet then
-      final.cudaPackages_12_6
-    else
-      prev.cudaPackages_12;
+  # cudaPackages_12_6 =
+  #   if useJetPackCudaPackageSet then
+  #     assert final.nvidia-jetpack6.cudaPackages.cudaMajorMinorVersion == "12.6";
+  #     final.nvidia-jetpack6.cudaPackages
+  #   else
+  #     prev.cudaPackages_12_6;
+  # cudaPackages_12 =
+  #   if useJetPackCudaPackageSet then
+  #     final.cudaPackages_12_6
+  #   else
+  #     prev.cudaPackages_12;
 
-  cudaPackages = final.cudaPackages_11;
+  # cudaPackages = final.cudaPackages_11;
 
   # TODO: Remove this once there's an official OpenCV release supporting CUDA 13
   opencv =
-    if final.cudaPackages.cudaAtLeast "13" then
-      final.nvidia-jetpack.l4t-opencv
-    else
-      prev.opencv;
+    if final.cudaPackages.cudaAtLeast "13" then final.nvidia-jetpack.l4t-opencv else prev.opencv;
 
-  _cuda = prev._cuda.extend (_: prev: recursiveUpdate prev {
-    extensions = prev.extensions
-      ++ final.lib.optional useJetPackCudaPackageSet (final.callPackage ./pkgs/cuda-extensions { });
+  _cuda = prev._cuda.extend (
+    _: prev:
+      recursiveUpdate prev {
+        extensions =
+          prev.extensions
+          ++ final.lib.optional useJetPackCudaPackageSet (final.callPackage ./pkgs/cuda-extensions { });
 
-    # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
-    # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
-    # since the CUDA db will contain these fixes.
-    bootstrapData.cudaCapabilityToInfo = {
-      "7.2" = {
-        archName = "Volta";
-        minCudaMajorMinorVersion = "11.4";
-        maxCudaMajorMinorVersion = "12.2";
-        isJetson = true;
+        # Update _cuda's database with an entry allowing Orin on CUDA 11.4.
+        # NOTE: This can be removed when the minimum supported Nixpkgs version is 25.11,
+        # since the CUDA db will contain these fixes.
+        bootstrapData.cudaCapabilityToInfo = {
+          "7.2" = {
+            archName = "Volta";
+            minCudaMajorMinorVersion = "11.4";
+            maxCudaMajorMinorVersion = "12.2";
+            isJetson = true;
 
-        isArchitectureSpecific = false;
-        isFamilySpecific = false;
-        dontDefaultAfterCudaMajorMinorVersion = null;
-      };
-      "8.7" = {
-        minCudaMajorMinorVersion = "11.4";
-      };
-    };
-  });
+            isArchitectureSpecific = false;
+            isFamilySpecific = false;
+            dontDefaultAfterCudaMajorMinorVersion = null;
+          };
+          "8.7" = {
+            minCudaMajorMinorVersion = "11.4";
+          };
+        };
+      }
+  );
 }
